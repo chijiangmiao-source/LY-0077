@@ -84,9 +84,9 @@ const loadInitialData = (): Schedule[] => {
       studentName: '王五',
       coachName: '李教练',
       carType: 'C1手动挡',
-      trainingDate: now.subtract(1, 'day').format('YYYY-MM-DD'),
+      trainingDate: now.add(2, 'day').format('YYYY-MM-DD'),
       timeSlot: '14:00-16:00',
-      status: 'completed',
+      status: 'pending',
       isAbsent: false,
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
@@ -252,10 +252,26 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
   },
 
   batchAdjustSchedules: (ids, data) => {
-    const { schedules, hasConflict } = get();
+    const { schedules } = get();
     const errors: string[] = [];
     const updatedIds: string[] = [];
     let currentSchedules = [...schedules];
+
+    const checkConflictInCurrent = (
+      coachName: string,
+      trainingDate: string,
+      timeSlot: string,
+      excludeId: string
+    ): boolean => {
+      return currentSchedules.some(
+        (s) =>
+          s.coachName === coachName &&
+          s.trainingDate === trainingDate &&
+          s.timeSlot === timeSlot &&
+          s.status !== 'cancelled' &&
+          s.id !== excludeId
+      );
+    };
 
     ids.forEach((id) => {
       const schedule = currentSchedules.find((s) => s.id === id);
@@ -266,10 +282,16 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       const tempCoachName = data.coachName ?? schedule.coachName;
       const tempTrainingDate = data.trainingDate ?? schedule.trainingDate;
       const tempTimeSlot = data.timeSlot ?? schedule.timeSlot;
-      const excludeIds = ids.filter((i) => i !== id);
+      if (
+        data.trainingDate &&
+        dayjs(tempTrainingDate).startOf('day').isBefore(dayjs().startOf('day'))
+      ) {
+        errors.push(`排班 ${id}（${schedule.studentName}）：练车日期不能早于今天，已跳过`);
+        return;
+      }
       if (data.coachName || data.trainingDate || data.timeSlot) {
-        if (hasConflict(tempCoachName, tempTrainingDate, tempTimeSlot, excludeIds)) {
-          errors.push(`排班 ${id}：调整后与其他排班时间冲突，已跳过`);
+        if (checkConflictInCurrent(tempCoachName, tempTrainingDate, tempTimeSlot, id)) {
+          errors.push(`排班 ${id}（${schedule.studentName}）：调整后教练在该日期时段已有排班，已跳过`);
           return;
         }
       }

@@ -202,6 +202,7 @@ export const BatchAdjustForm: React.FC<BatchAdjustFormProps> = ({
                 <DatePicker
                   style={{ width: '100%' }}
                   placeholder="请选择日期"
+                  disabledDate={(current) => current && current < dayjs().startOf('day')}
                 />
               </Form.Item>
             ) : null
