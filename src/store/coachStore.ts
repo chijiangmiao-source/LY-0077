@@ -4,6 +4,7 @@ import { Coach } from '@/types';
 import { STORAGE_KEYS } from '@/utils/constants';
 import { storage } from '@/utils/storage';
 import { generateId, cleanText } from '@/utils/helpers';
+import { useScheduleStore } from './scheduleStore';
 
 interface CoachState {
   coaches: Coach[];
@@ -70,13 +71,26 @@ export const useCoachStore = create<CoachState>((set, get) => ({
   },
 
   updateCoach: (id, data) => {
+    const oldCoach = get().coaches.find((c) => c.id === id);
+    const cleanedName = data.name ? cleanText(data.name) : undefined;
     const updated = get().coaches.map((c) =>
       c.id === id
-        ? { ...c, ...data, name: data.name ? cleanText(data.name) : c.name }
+        ? { ...c, ...data, name: cleanedName ?? c.name }
         : c
     );
     set({ coaches: updated });
     storage.set(STORAGE_KEYS.COACHES, updated);
+
+    if (oldCoach && cleanedName && oldCoach.name !== cleanedName) {
+      const scheduleState = useScheduleStore.getState();
+      const updatedSchedules = scheduleState.schedules.map((sc) =>
+        sc.coachName === oldCoach.name
+          ? { ...sc, coachName: cleanedName, updatedAt: dayjs().toISOString() }
+          : sc
+      );
+      useScheduleStore.setState({ schedules: updatedSchedules });
+      storage.set(STORAGE_KEYS.SCHEDULES, updatedSchedules);
+    }
   },
 
   deleteCoach: (id) => {

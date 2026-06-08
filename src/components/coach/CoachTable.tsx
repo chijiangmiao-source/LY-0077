@@ -1,5 +1,5 @@
 import React from 'react';
-import { Table, Button, Space, Popconfirm, App } from 'antd';
+import { Table, Button, Space, App } from 'antd';
 import { Pencil, Trash2, Phone, UserCheck, Car } from 'lucide-react';
 import type { ColumnsType } from 'antd/es/table';
 import { Coach } from '@/types';
@@ -105,17 +105,15 @@ export const CoachTable: React.FC<CoachTableProps> = ({
           >
             编辑
           </Button>
-          <Popconfirm title="确认删除？">
-            <Button
-              type="link"
-              size="small"
-              danger
-              icon={<Trash2 size={14} />}
-              onClick={() => handleDelete(record)}
-            >
-              删除
-            </Button>
-          </Popconfirm>
+          <Button
+            type="link"
+            size="small"
+            danger
+            icon={<Trash2 size={14} />}
+            onClick={() => handleDelete(record)}
+          >
+            删除
+          </Button>
         </Space>
       ),
     },

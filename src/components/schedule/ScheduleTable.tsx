@@ -1,5 +1,5 @@
 import React from 'react';
-import { Table, Tag, Button, Space, Popconfirm, App } from 'antd';
+import { Table, Tag, Button, Space, App } from 'antd';
 import { Eye, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import type { ColumnsType } from 'antd/es/table';
 import { Schedule, CourseStatus } from '@/types';
@@ -122,17 +122,15 @@ export const ScheduleTable: React.FC<ScheduleTableProps> = ({
           >
             编辑
           </Button>
-          <Popconfirm title="确认删除？">
-            <Button
-              type="link"
-              size="small"
-              danger
-              icon={<Trash2 size={14} />}
-              onClick={() => handleDelete(record)}
-            >
-              删除
-            </Button>
-          </Popconfirm>
+          <Button
+            type="link"
+            size="small"
+            danger
+            icon={<Trash2 size={14} />}
+            onClick={() => handleDelete(record)}
+          >
+            删除
+          </Button>
         </Space>
       ),
     },

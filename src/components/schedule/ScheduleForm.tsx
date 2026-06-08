@@ -146,7 +146,7 @@ export const ScheduleForm: React.FC<ScheduleFormProps> = ({
                 <Select
                   {...field}
                   allowClear
-                  placeholder="请选择或输入教练姓名"
+                  placeholder="请选择教练姓名"
                   options={coachNames.map((n) => ({ label: n, value: n }))}
                   showSearch
                   optionFilterProp="label"

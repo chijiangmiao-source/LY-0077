@@ -4,6 +4,7 @@ import { Student } from '@/types';
 import { STORAGE_KEYS } from '@/utils/constants';
 import { storage } from '@/utils/storage';
 import { generateId, cleanText } from '@/utils/helpers';
+import { useScheduleStore } from './scheduleStore';
 
 interface StudentState {
   students: Student[];
@@ -70,13 +71,26 @@ export const useStudentStore = create<StudentState>((set, get) => ({
   },
 
   updateStudent: (id, data) => {
+    const oldStudent = get().students.find((s) => s.id === id);
+    const cleanedName = data.name ? cleanText(data.name) : undefined;
     const updated = get().students.map((s) =>
       s.id === id
-        ? { ...s, ...data, name: data.name ? cleanText(data.name) : s.name }
+        ? { ...s, ...data, name: cleanedName ?? s.name }
         : s
     );
     set({ students: updated });
     storage.set(STORAGE_KEYS.STUDENTS, updated);
+
+    if (oldStudent && cleanedName && oldStudent.name !== cleanedName) {
+      const scheduleState = useScheduleStore.getState();
+      const updatedSchedules = scheduleState.schedules.map((sc) =>
+        sc.studentName === oldStudent.name
+          ? { ...sc, studentName: cleanedName, updatedAt: dayjs().toISOString() }
+          : sc
+      );
+      useScheduleStore.setState({ schedules: updatedSchedules });
+      storage.set(STORAGE_KEYS.SCHEDULES, updatedSchedules);
+    }
   },
 
   deleteStudent: (id) => {
