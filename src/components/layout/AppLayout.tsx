@@ -8,6 +8,7 @@ import {
   BarChart3,
   Car,
   AlertTriangle,
+  FileText,
 } from 'lucide-react';
 import { useScheduleStore } from '@/store/scheduleStore';
 
@@ -32,6 +33,11 @@ const menuItems = [
     key: '/coaches',
     icon: <UserCheck size={18} />,
     label: '教练管理',
+  },
+  {
+    key: '/exams',
+    icon: <FileText size={18} />,
+    label: '考试预约',
   },
   {
     key: '/statistics',

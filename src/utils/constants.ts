@@ -1,10 +1,11 @@
-import { StatusOption } from '@/types';
+import { StatusOption, ExamStatusOption, ExamSubjectOption } from '@/types';
 
 export const STORAGE_KEYS = {
   SCHEDULES: 'driving_school_schedules',
   STUDENTS: 'driving_school_students',
   COACHES: 'driving_school_coaches',
   COURSE_RECORDS: 'driving_school_course_records',
+  EXAM_APPOINTMENTS: 'driving_school_exam_appointments',
 };
 
 export const STATUS_OPTIONS: StatusOption[] = [
@@ -40,4 +41,27 @@ export const TRAINING_ITEMS = [
   '超车',
   '掉头',
   '夜间行驶',
+];
+
+export const EXAM_SUBJECT_OPTIONS: ExamSubjectOption[] = [
+  { value: 'subject1', label: '科目一（理论）' },
+  { value: 'subject2', label: '科目二（场地）' },
+  { value: 'subject3', label: '科目三（路考）' },
+  { value: 'subject4', label: '科目四（安全文明）' },
+];
+
+export const EXAM_STATUS_OPTIONS: ExamStatusOption[] = [
+  { value: 'booked', label: '已预约', color: 'default' },
+  { value: 'confirmed', label: '已确认', color: 'processing' },
+  { value: 'completed', label: '已完成', color: 'success' },
+  { value: 'cancelled', label: '已取消', color: 'error' },
+  { value: 'absent', label: '缺考', color: 'warning' },
+];
+
+export const EXAM_SESSIONS = [
+  '上午场 08:00-10:00',
+  '上午场 10:00-12:00',
+  '下午场 13:30-15:30',
+  '下午场 15:30-17:30',
+  '夜场 18:00-20:00',
 ];

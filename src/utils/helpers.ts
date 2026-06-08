@@ -44,6 +44,38 @@ export const getStatusLabel = (status: string): string => {
   return map[status] || status;
 };
 
+export const generateExamId = (existingIds: string[]): string => {
+  const datePrefix = dayjs().format('YYYYMMDD');
+  const prefix = `EX${datePrefix}`;
+  const todayIds = existingIds.filter((id) => id.startsWith(prefix));
+  const maxNum = todayIds.reduce((max, id) => {
+    const num = parseInt(id.slice(prefix.length), 10);
+    return isNaN(num) ? max : Math.max(max, num);
+  }, 0);
+  return `${prefix}${String(maxNum + 1).padStart(3, '0')}`;
+};
+
+export const getExamSubjectLabel = (subject: string): string => {
+  const map: Record<string, string> = {
+    subject1: '科目一（理论）',
+    subject2: '科目二（场地）',
+    subject3: '科目三（路考）',
+    subject4: '科目四（安全文明）',
+  };
+  return map[subject] || subject;
+};
+
+export const getExamStatusLabel = (status: string): string => {
+  const map: Record<string, string> = {
+    booked: '已预约',
+    confirmed: '已确认',
+    completed: '已完成',
+    cancelled: '已取消',
+    absent: '缺考',
+  };
+  return map[status] || status;
+};
+
 export const canTransitionStatus = (
   current: string,
   next: string

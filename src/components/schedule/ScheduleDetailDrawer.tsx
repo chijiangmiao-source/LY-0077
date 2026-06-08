@@ -30,12 +30,14 @@ import {
   Car,
   CalendarDays,
   Clock,
+  FileText,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { Schedule, CourseRecord } from '@/types';
 import { STATUS_OPTIONS, TRAINING_ITEMS } from '@/utils/constants';
 import { useScheduleStore } from '@/store/scheduleStore';
 import { useCourseRecordStore } from '@/store/courseRecordStore';
+import { ExamForm } from '@/components/exam/ExamForm';
 
 interface ScheduleDetailDrawerProps {
   open: boolean;
@@ -63,6 +65,7 @@ export const ScheduleDetailDrawer: React.FC<ScheduleDetailDrawerProps> = ({
   const [editingRecord, setEditingRecord] = useState<CourseRecord | null>(null);
   const [recordForm] = Form.useForm();
   const [absentNote, setAbsentNote] = useState('');
+  const [examFormOpen, setExamFormOpen] = useState(false);
 
   const statusOption = STATUS_OPTIONS.find((o) => o.value === schedule?.status);
 
@@ -183,7 +186,7 @@ export const ScheduleDetailDrawer: React.FC<ScheduleDetailDrawerProps> = ({
         onClose={onClose}
         width={560}
         extra={
-          <Space>
+          <Space wrap>
             {schedule?.status === 'pending' && (
               <Button
                 type="primary"
@@ -201,6 +204,16 @@ export const ScheduleDetailDrawer: React.FC<ScheduleDetailDrawerProps> = ({
                 style={{ background: '#059669' }}
               >
                 完成课程
+              </Button>
+            )}
+            {schedule?.status === 'completed' && (
+              <Button
+                type="primary"
+                icon={<FileText size={14} />}
+                onClick={() => setExamFormOpen(true)}
+                style={{ background: '#7c3aed' }}
+              >
+                预约考试
               </Button>
             )}
             {schedule &&
@@ -445,6 +458,13 @@ export const ScheduleDetailDrawer: React.FC<ScheduleDetailDrawerProps> = ({
           </Form.Item>
         </Form>
       </Modal>
+
+      <ExamForm
+        open={examFormOpen}
+        initialStudentName={schedule?.studentName}
+        onCancel={() => setExamFormOpen(false)}
+        onSuccess={() => setExamFormOpen(false)}
+      />
     </>
   );
 };

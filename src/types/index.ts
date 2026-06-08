@@ -77,3 +77,50 @@ export interface StatisticsFilter {
   carType?: string;
   status?: CourseStatus | '';
 }
+
+export type ExamSubject = 'subject1' | 'subject2' | 'subject3' | 'subject4';
+
+export type ExamStatus = 'booked' | 'confirmed' | 'completed' | 'cancelled' | 'absent';
+
+export interface ExamAppointment {
+  id: string;
+  studentName: string;
+  subject: ExamSubject;
+  appointmentDate: string;
+  session: string;
+  status: ExamStatus;
+  isPassed?: boolean;
+  remark?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ExamFormData {
+  id?: string;
+  studentName: string;
+  subject: ExamSubject;
+  appointmentDate: string;
+  session: string;
+  status: ExamStatus;
+  isPassed?: boolean;
+  remark?: string;
+}
+
+export interface ExamFilter {
+  keyword?: string;
+  studentName?: string;
+  subject?: ExamSubject | '';
+  dateRange?: [string, string] | null;
+  status?: ExamStatus | '';
+}
+
+export interface ExamStatusOption {
+  value: ExamStatus;
+  label: string;
+  color: 'default' | 'processing' | 'success' | 'error' | 'warning';
+}
+
+export interface ExamSubjectOption {
+  value: ExamSubject;
+  label: string;
+}

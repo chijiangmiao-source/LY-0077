@@ -8,6 +8,7 @@ interface StatsCardProps {
   icon: LucideIcon;
   color: string;
   bgColor: string;
+  suffix?: string;
 }
 
 export const StatsCard: React.FC<StatsCardProps> = ({
@@ -16,6 +17,7 @@ export const StatsCard: React.FC<StatsCardProps> = ({
   icon: Icon,
   color,
   bgColor,
+  suffix,
 }) => {
   return (
     <Card
@@ -44,9 +46,14 @@ export const StatsCard: React.FC<StatsCardProps> = ({
               fontWeight: 700,
               color: '#0f172a',
               lineHeight: 1,
+              display: 'flex',
+              alignItems: 'baseline',
             }}
           >
             {value}
+            {suffix && (
+              <span style={{ fontSize: 18, fontWeight: 600, marginLeft: 4 }}>{suffix}</span>
+            )}
           </div>
         </div>
         <div

@@ -60,7 +60,40 @@ export const courseRecordSchema = z.object({
   remark: z.string().optional(),
 });
 
+export const examFormSchema = z
+  .object({
+    id: z.string().optional(),
+    studentName: nameSchema,
+    subject: z.enum(['subject1', 'subject2', 'subject3', 'subject4'], {
+      required_error: '请选择考试科目',
+    }),
+    appointmentDate: z
+      .string()
+      .min(1, '请选择预约日期')
+      .refine((v) => dayjs(v).isValid(), '日期格式无效'),
+    session: z.string().min(1, '请选择考试场次'),
+    status: z.enum(['booked', 'confirmed', 'completed', 'cancelled', 'absent'], {
+      required_error: '请选择考试状态',
+    }),
+    isPassed: z.boolean().optional(),
+    remark: z.string().optional(),
+  })
+  .strict()
+  .refine(
+    (data) => {
+      if (data.status === 'completed' && data.isPassed === undefined) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: '考试已完成时请选择是否通过',
+      path: ['isPassed'],
+    }
+  );
+
 export type ScheduleFormValues = z.infer<typeof scheduleFormSchema>;
 export type StudentFormValues = z.infer<typeof studentFormSchema>;
 export type CoachFormValues = z.infer<typeof coachFormSchema>;
 export type CourseRecordValues = z.infer<typeof courseRecordSchema>;
+export type ExamFormValues = z.infer<typeof examFormSchema>;
