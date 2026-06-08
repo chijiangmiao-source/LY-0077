@@ -60,5 +60,20 @@ export interface ScheduleFilter {
   dateRange?: [string, string] | null;
   coachName?: string;
   studentName?: string;
+  carType?: string;
+  status?: CourseStatus | '';
+}
+
+export interface BatchScheduleAdjustData {
+  coachName?: string;
+  carType?: string;
+  trainingDate?: string;
+  timeSlot?: string;
+}
+
+export interface StatisticsFilter {
+  dateRange?: [string, string] | null;
+  coachName?: string;
+  carType?: string;
   status?: CourseStatus | '';
 }

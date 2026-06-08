@@ -6,11 +6,14 @@ import { storage } from '@/utils/storage';
 import { generateId, cleanText } from '@/utils/helpers';
 import { useScheduleStore } from './scheduleStore';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyData = any;
+
 interface CoachState {
   coaches: Coach[];
   fetchCoaches: () => void;
-  addCoach: (data: any) => { success: boolean; message?: string };
-  updateCoach: (id: string, data: any) => void;
+  addCoach: (data: AnyData) => { success: boolean; message?: string };
+  updateCoach: (id: string, data: AnyData) => void;
   deleteCoach: (id: string) => void;
   getCoachNames: () => string[];
 }
@@ -81,15 +84,30 @@ export const useCoachStore = create<CoachState>((set, get) => ({
     set({ coaches: updated });
     storage.set(STORAGE_KEYS.COACHES, updated);
 
-    if (oldCoach && cleanedName && oldCoach.name !== cleanedName) {
+    if (oldCoach) {
       const scheduleState = useScheduleStore.getState();
-      const updatedSchedules = scheduleState.schedules.map((sc) =>
-        sc.coachName === oldCoach.name
-          ? { ...sc, coachName: cleanedName, updatedAt: dayjs().toISOString() }
-          : sc
-      );
-      useScheduleStore.setState({ schedules: updatedSchedules });
-      storage.set(STORAGE_KEYS.SCHEDULES, updatedSchedules);
+      let needsUpdate = false;
+      const updatedSchedules = scheduleState.schedules.map((sc) => {
+        let newSc = sc;
+        if (sc.coachName === oldCoach.name) {
+          if (cleanedName && oldCoach.name !== cleanedName) {
+            newSc = { ...newSc, coachName: cleanedName };
+            needsUpdate = true;
+          }
+          if (data.carType && oldCoach.carType !== data.carType) {
+            newSc = { ...newSc, carType: data.carType };
+            needsUpdate = true;
+          }
+          if (needsUpdate) {
+            newSc = { ...newSc, updatedAt: dayjs().toISOString() };
+          }
+        }
+        return newSc;
+      });
+      if (needsUpdate) {
+        useScheduleStore.setState({ schedules: updatedSchedules });
+        storage.set(STORAGE_KEYS.SCHEDULES, updatedSchedules);
+      }
     }
   },
 

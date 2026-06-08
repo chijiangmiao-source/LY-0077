@@ -1,21 +1,31 @@
 import { create } from 'zustand';
 import dayjs from 'dayjs';
-import { Schedule, CourseStatus, ScheduleFormData } from '@/types';
+import { Schedule, CourseStatus, ScheduleFormData, BatchScheduleAdjustData } from '@/types';
 import { STORAGE_KEYS } from '@/utils/constants';
 import { storage } from '@/utils/storage';
 import {
   generateScheduleId,
-  generateId,
   canTransitionStatus,
 } from '@/utils/helpers';
+
+interface BatchResult {
+  success: boolean;
+  successCount: number;
+  failCount: number;
+  message?: string;
+  errors?: string[];
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyData = any;
 
 interface ScheduleState {
   schedules: Schedule[];
   fetchSchedules: () => void;
-  addSchedule: (data: any) => { success: boolean; message?: string };
+  addSchedule: (data: AnyData) => { success: boolean; message?: string };
   updateSchedule: (
     id: string,
-    data: any
+    data: AnyData
   ) => { success: boolean; message?: string };
   deleteSchedule: (id: string) => void;
   updateStatus: (
@@ -28,9 +38,13 @@ interface ScheduleState {
     coachName: string,
     trainingDate: string,
     timeSlot: string,
-    excludeId?: string
+    excludeIds?: string[]
   ) => boolean;
   getScheduleById: (id: string) => Schedule | undefined;
+  batchAddSchedules: (dataList: ScheduleFormData[]) => BatchResult;
+  batchAdjustSchedules: (ids: string[], data: BatchScheduleAdjustData) => BatchResult;
+  batchCancelSchedules: (ids: string[]) => BatchResult;
+  batchDeleteSchedules: (ids: string[]) => BatchResult;
 }
 
 const loadInitialData = (): Schedule[] => {
@@ -89,21 +103,22 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
     storage.set(STORAGE_KEYS.SCHEDULES, data);
   },
 
-  hasConflict: (coachName, trainingDate, timeSlot, excludeId) => {
+  hasConflict: (coachName, trainingDate, timeSlot, excludeIds) => {
     const { schedules } = get();
+    const excludeArray = excludeIds || [];
     return schedules.some(
       (s) =>
         s.coachName === coachName &&
         s.trainingDate === trainingDate &&
         s.timeSlot === timeSlot &&
         s.status !== 'cancelled' &&
-        s.id !== excludeId
+        !excludeArray.includes(s.id)
     );
   },
 
   addSchedule: (data) => {
     const { schedules, hasConflict } = get();
-    if (hasConflict(data.coachName, data.trainingDate, data.timeSlot)) {
+    if (hasConflict(data.coachName, data.trainingDate, data.timeSlot, [])) {
       return { success: false, message: '该教练在此日期时段已有排班，请更换时间或教练' };
     }
     const id = data.id || generateScheduleId(schedules.map((s) => s.id));
@@ -126,7 +141,7 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
 
   updateSchedule: (id, data) => {
     const { schedules, hasConflict } = get();
-    if (hasConflict(data.coachName, data.trainingDate, data.timeSlot, id)) {
+    if (hasConflict(data.coachName, data.trainingDate, data.timeSlot, [id])) {
       return { success: false, message: '该教练在此日期时段已有排班，请更换时间或教练' };
     }
     const updated = schedules.map((s) =>
@@ -185,5 +200,141 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
 
   getScheduleById: (id) => {
     return get().schedules.find((s) => s.id === id);
+  },
+
+  batchAddSchedules: (dataList) => {
+    const { schedules, hasConflict } = get();
+    const errors: string[] = [];
+    const newSchedules: Schedule[] = [];
+    const currentSchedules = [...schedules];
+    const processedIds: string[] = [];
+
+    dataList.forEach((data, index) => {
+      const tempCoachName = data.coachName;
+      const tempTrainingDate = data.trainingDate;
+      const tempTimeSlot = data.timeSlot;
+      const excludeIds = [...processedIds];
+      if (hasConflict(tempCoachName, tempTrainingDate, tempTimeSlot, excludeIds)) {
+        errors.push(`第 ${index + 1} 条：该教练在此日期时段已有排班，已跳过`);
+        return;
+      }
+      const id = generateScheduleId(currentSchedules.map((s) => s.id));
+      if (currentSchedules.some((s) => s.id === id)) {
+        errors.push(`第 ${index + 1} 条：排班编号已存在，已跳过`);
+        return;
+      }
+      const now = dayjs().toISOString();
+      const newSchedule: Schedule = {
+        id,
+        ...data,
+        isAbsent: false,
+        createdAt: now,
+        updatedAt: now,
+      };
+      newSchedules.push(newSchedule);
+      currentSchedules.push(newSchedule);
+      processedIds.push(id);
+    });
+
+    if (newSchedules.length > 0) {
+      const updated = [...schedules, ...newSchedules];
+      set({ schedules: updated });
+      storage.set(STORAGE_KEYS.SCHEDULES, updated);
+    }
+
+    return {
+      success: newSchedules.length > 0,
+      successCount: newSchedules.length,
+      failCount: errors.length,
+      errors,
+      message: `成功新增 ${newSchedules.length} 条排班${errors.length > 0 ? `，${errors.length} 条失败` : ''}`,
+    };
+  },
+
+  batchAdjustSchedules: (ids, data) => {
+    const { schedules, hasConflict } = get();
+    const errors: string[] = [];
+    const updatedIds: string[] = [];
+    let currentSchedules = [...schedules];
+
+    ids.forEach((id) => {
+      const schedule = currentSchedules.find((s) => s.id === id);
+      if (!schedule) {
+        errors.push(`排班 ${id} 不存在，已跳过`);
+        return;
+      }
+      const tempCoachName = data.coachName ?? schedule.coachName;
+      const tempTrainingDate = data.trainingDate ?? schedule.trainingDate;
+      const tempTimeSlot = data.timeSlot ?? schedule.timeSlot;
+      const excludeIds = ids.filter((i) => i !== id);
+      if (data.coachName || data.trainingDate || data.timeSlot) {
+        if (hasConflict(tempCoachName, tempTrainingDate, tempTimeSlot, excludeIds)) {
+          errors.push(`排班 ${id}：调整后与其他排班时间冲突，已跳过`);
+          return;
+        }
+      }
+      currentSchedules = currentSchedules.map((s) =>
+        s.id === id
+          ? { ...s, ...data, updatedAt: dayjs().toISOString() }
+          : s
+      );
+      updatedIds.push(id);
+    });
+
+    if (updatedIds.length > 0) {
+      set({ schedules: currentSchedules });
+      storage.set(STORAGE_KEYS.SCHEDULES, currentSchedules);
+    }
+
+    return {
+      success: updatedIds.length > 0,
+      successCount: updatedIds.length,
+      failCount: errors.length,
+      errors,
+      message: `成功调整 ${updatedIds.length} 条排班${errors.length > 0 ? `，${errors.length} 条失败` : ''}`,
+    };
+  },
+
+  batchCancelSchedules: (ids) => {
+    const { schedules } = get();
+    const errors: string[] = [];
+    const updatedIds: string[] = [];
+
+    const updated = schedules.map((s) => {
+      if (!ids.includes(s.id)) return s;
+      if (!canTransitionStatus(s.status, 'cancelled')) {
+        errors.push(`排班 ${s.id}：当前状态无法取消，已跳过`);
+        return s;
+      }
+      updatedIds.push(s.id);
+      return { ...s, status: 'cancelled' as CourseStatus, updatedAt: dayjs().toISOString() };
+    });
+
+    if (updatedIds.length > 0) {
+      set({ schedules: updated });
+      storage.set(STORAGE_KEYS.SCHEDULES, updated);
+    }
+
+    return {
+      success: updatedIds.length > 0,
+      successCount: updatedIds.length,
+      failCount: errors.length,
+      errors,
+      message: `成功取消 ${updatedIds.length} 条排班${errors.length > 0 ? `，${errors.length} 条失败` : ''}`,
+    };
+  },
+
+  batchDeleteSchedules: (ids) => {
+    const { schedules } = get();
+    const updated = schedules.filter((s) => !ids.includes(s.id));
+    const deletedCount = schedules.length - updated.length;
+    set({ schedules: updated });
+    storage.set(STORAGE_KEYS.SCHEDULES, updated);
+    return {
+      success: deletedCount > 0,
+      successCount: deletedCount,
+      failCount: ids.length - deletedCount,
+      message: `成功删除 ${deletedCount} 条排班`,
+    };
   },
 }));

@@ -6,11 +6,14 @@ import { storage } from '@/utils/storage';
 import { generateId, cleanText } from '@/utils/helpers';
 import { useScheduleStore } from './scheduleStore';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyData = any;
+
 interface StudentState {
   students: Student[];
   fetchStudents: () => void;
-  addStudent: (data: any) => { success: boolean; message?: string };
-  updateStudent: (id: string, data: any) => void;
+  addStudent: (data: AnyData) => { success: boolean; message?: string };
+  updateStudent: (id: string, data: AnyData) => void;
   deleteStudent: (id: string) => void;
   getStudentNames: () => string[];
 }
@@ -81,15 +84,26 @@ export const useStudentStore = create<StudentState>((set, get) => ({
     set({ students: updated });
     storage.set(STORAGE_KEYS.STUDENTS, updated);
 
-    if (oldStudent && cleanedName && oldStudent.name !== cleanedName) {
+    if (oldStudent) {
       const scheduleState = useScheduleStore.getState();
-      const updatedSchedules = scheduleState.schedules.map((sc) =>
-        sc.studentName === oldStudent.name
-          ? { ...sc, studentName: cleanedName, updatedAt: dayjs().toISOString() }
-          : sc
-      );
-      useScheduleStore.setState({ schedules: updatedSchedules });
-      storage.set(STORAGE_KEYS.SCHEDULES, updatedSchedules);
+      let needsUpdate = false;
+      const updatedSchedules = scheduleState.schedules.map((sc) => {
+        let newSc = sc;
+        if (sc.studentName === oldStudent.name) {
+          if (cleanedName && oldStudent.name !== cleanedName) {
+            newSc = { ...newSc, studentName: cleanedName };
+            needsUpdate = true;
+          }
+          if (needsUpdate) {
+            newSc = { ...newSc, updatedAt: dayjs().toISOString() };
+          }
+        }
+        return newSc;
+      });
+      if (needsUpdate) {
+        useScheduleStore.setState({ schedules: updatedSchedules });
+        storage.set(STORAGE_KEYS.SCHEDULES, updatedSchedules);
+      }
     }
   },
 

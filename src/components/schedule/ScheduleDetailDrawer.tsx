@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Drawer,
   Descriptions,
@@ -24,6 +24,7 @@ import {
   AlertTriangle,
   Plus,
   Trash2,
+  Pencil,
   User,
   UserCheck,
   Car,
@@ -35,7 +36,6 @@ import { Schedule, CourseRecord } from '@/types';
 import { STATUS_OPTIONS, TRAINING_ITEMS } from '@/utils/constants';
 import { useScheduleStore } from '@/store/scheduleStore';
 import { useCourseRecordStore } from '@/store/courseRecordStore';
-import { canTransitionStatus } from '@/utils/helpers';
 
 interface ScheduleDetailDrawerProps {
   open: boolean;
@@ -56,12 +56,32 @@ export const ScheduleDetailDrawer: React.FC<ScheduleDetailDrawerProps> = ({
     schedule ? s.getRecordsByScheduleId(schedule.id) : []
   );
   const addRecord = useCourseRecordStore((s) => s.addRecord);
+  const updateRecord = useCourseRecordStore((s) => s.updateRecord);
   const deleteRecord = useCourseRecordStore((s) => s.deleteRecord);
 
   const [recordModalOpen, setRecordModalOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<CourseRecord | null>(null);
   const [recordForm] = Form.useForm();
+  const [absentNote, setAbsentNote] = useState('');
 
   const statusOption = STATUS_OPTIONS.find((o) => o.value === schedule?.status);
+
+  useEffect(() => {
+    if (recordModalOpen && editingRecord) {
+      recordForm.setFieldsValue({
+        trainingItem: editingRecord.trainingItem,
+        isCompleted: editingRecord.isCompleted,
+        recordDate: dayjs(editingRecord.recordDate),
+        remark: editingRecord.remark,
+      });
+    } else if (recordModalOpen && !editingRecord) {
+      recordForm.resetFields();
+      recordForm.setFieldsValue({
+        isCompleted: false,
+        recordDate: dayjs(),
+      });
+    }
+  }, [recordModalOpen, editingRecord, recordForm]);
 
   const handleStatusChange = (nextStatus: 'training' | 'completed' | 'cancelled') => {
     if (!schedule) return;
@@ -75,24 +95,21 @@ export const ScheduleDetailDrawer: React.FC<ScheduleDetailDrawerProps> = ({
 
   const handleMarkAbsent = () => {
     if (!schedule) return;
+    setAbsentNote('');
     modal.confirm({
       title: '确认标记为异常缺勤？',
       content: (
         <Input.TextArea
-          id="absent-note"
           placeholder="请输入缺勤备注（可选）"
           rows={3}
-          onChange={(e) => {
-            (modal as any)._absentNote = e.target.value;
-          }}
+          onChange={(e) => setAbsentNote(e.target.value)}
         />
       ),
       okText: '确认标记',
       cancelText: '取消',
       okButtonProps: { danger: true },
       onOk: () => {
-        const note = (modal as any)._absentNote || '';
-        markAbsent(schedule.id, note);
+        markAbsent(schedule.id, absentNote);
         message.success('已标记为异常缺勤');
       },
     });
@@ -104,21 +121,44 @@ export const ScheduleDetailDrawer: React.FC<ScheduleDetailDrawerProps> = ({
     message.success('已取消缺勤标记');
   };
 
-  const handleAddRecord = async () => {
+  const handleOpenAddRecord = () => {
+    setEditingRecord(null);
+    setRecordModalOpen(true);
+  };
+
+  const handleOpenEditRecord = (record: CourseRecord) => {
+    setEditingRecord(record);
+    setRecordModalOpen(true);
+  };
+
+  const handleSubmitRecord = async () => {
     try {
       const values = await recordForm.validateFields();
       if (!schedule) return;
-      addRecord({
-        scheduleId: schedule.id,
-        trainingItem: values.trainingItem,
-        isCompleted: values.isCompleted || false,
-        recordDate: values.recordDate.format('YYYY-MM-DD'),
-        remark: values.remark,
-      });
-      message.success('课程记录添加成功');
+      if (editingRecord) {
+        updateRecord(editingRecord.id, {
+          trainingItem: values.trainingItem,
+          isCompleted: values.isCompleted || false,
+          recordDate: values.recordDate.format('YYYY-MM-DD'),
+          remark: values.remark,
+        });
+        message.success('课程记录更新成功');
+      } else {
+        addRecord({
+          scheduleId: schedule.id,
+          trainingItem: values.trainingItem,
+          isCompleted: values.isCompleted || false,
+          recordDate: values.recordDate.format('YYYY-MM-DD'),
+          remark: values.remark,
+        });
+        message.success('课程记录添加成功');
+      }
       setRecordModalOpen(false);
+      setEditingRecord(null);
       recordForm.resetFields();
-    } catch {}
+    } catch {
+      // 表单验证失败
+    }
   };
 
   const handleDeleteRecord = (record: CourseRecord) => {
@@ -287,7 +327,7 @@ export const ScheduleDetailDrawer: React.FC<ScheduleDetailDrawerProps> = ({
                   type="link"
                   size="small"
                   icon={<Plus size={14} />}
-                  onClick={() => setRecordModalOpen(true)}
+                  onClick={handleOpenAddRecord}
                   style={{ padding: 0 }}
                 >
                   添加记录
@@ -304,6 +344,14 @@ export const ScheduleDetailDrawer: React.FC<ScheduleDetailDrawerProps> = ({
                   <List.Item
                     key={item.id}
                     actions={[
+                      <Button
+                        type="text"
+                        size="small"
+                        icon={<Pencil size={14} />}
+                        onClick={() => handleOpenEditRecord(item)}
+                      >
+                        编辑
+                      </Button>,
                       <Button
                         type="text"
                         size="small"
@@ -353,16 +401,18 @@ export const ScheduleDetailDrawer: React.FC<ScheduleDetailDrawerProps> = ({
 
       <Modal
         open={recordModalOpen}
-        title="添加课程记录"
+        title={editingRecord ? '编辑课程记录' : '添加课程记录'}
         onCancel={() => {
           setRecordModalOpen(false);
+          setEditingRecord(null);
           recordForm.resetFields();
         }}
-        onOk={handleAddRecord}
-        okText="确认添加"
+        onOk={handleSubmitRecord}
+        okText={editingRecord ? '确认修改' : '确认添加'}
         cancelText="取消"
+        destroyOnClose
       >
-        <Form form={recordForm} layout="vertical">
+        <Form form={recordForm} layout="vertical" preserve={false}>
           <Form.Item
             label="训练项目"
             name="trainingItem"
@@ -380,7 +430,6 @@ export const ScheduleDetailDrawer: React.FC<ScheduleDetailDrawerProps> = ({
             label="完成情况"
             name="isCompleted"
             valuePropName="checked"
-            initialValue={false}
           >
             <Checkbox>已完成</Checkbox>
           </Form.Item>
@@ -388,7 +437,6 @@ export const ScheduleDetailDrawer: React.FC<ScheduleDetailDrawerProps> = ({
             label="记录日期"
             name="recordDate"
             rules={[{ required: true, message: '请选择记录日期' }]}
-            initialValue={dayjs()}
           >
             <DatePicker style={{ width: '100%' }} />
           </Form.Item>

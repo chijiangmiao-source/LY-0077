@@ -1,5 +1,6 @@
 import React from 'react';
 import { Table, Tag, Button, Space, App } from 'antd';
+import type { TableRowSelection } from 'antd/es/table/interface';
 import { Eye, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import type { ColumnsType } from 'antd/es/table';
 import { Schedule, CourseStatus } from '@/types';
@@ -11,6 +12,8 @@ interface ScheduleTableProps {
   loading?: boolean;
   onEdit: (schedule: Schedule) => void;
   onViewDetail: (schedule: Schedule) => void;
+  selectedRowKeys?: React.Key[];
+  onSelectionChange?: (keys: React.Key[]) => void;
 }
 
 export const ScheduleTable: React.FC<ScheduleTableProps> = ({
@@ -18,6 +21,8 @@ export const ScheduleTable: React.FC<ScheduleTableProps> = ({
   loading,
   onEdit,
   onViewDetail,
+  selectedRowKeys,
+  onSelectionChange,
 }) => {
   const { message, modal } = App.useApp();
   const deleteSchedule = useScheduleStore((s) => s.deleteSchedule);
@@ -136,6 +141,15 @@ export const ScheduleTable: React.FC<ScheduleTableProps> = ({
     },
   ];
 
+  const rowSelection: TableRowSelection<Schedule> | undefined =
+    onSelectionChange
+      ? {
+          selectedRowKeys,
+          onChange: onSelectionChange,
+          preserveSelectedRowKeys: true,
+        }
+      : undefined;
+
   return (
     <Table
       rowKey="id"
@@ -143,6 +157,7 @@ export const ScheduleTable: React.FC<ScheduleTableProps> = ({
       dataSource={data}
       loading={loading}
       scroll={{ x: 1000 }}
+      rowSelection={rowSelection}
       pagination={{
         pageSize: 10,
         showSizeChanger: true,
