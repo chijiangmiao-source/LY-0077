@@ -16,6 +16,7 @@ import {
   App,
   Empty,
   Tooltip,
+  Progress,
 } from 'antd';
 import {
   Play,
@@ -31,6 +32,7 @@ import {
   CalendarDays,
   Clock,
   FileText,
+  Target,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { Schedule, CourseRecord } from '@/types';
@@ -68,6 +70,24 @@ export const ScheduleDetailDrawer: React.FC<ScheduleDetailDrawerProps> = ({
   const [examFormOpen, setExamFormOpen] = useState(false);
 
   const statusOption = STATUS_OPTIONS.find((o) => o.value === schedule?.status);
+
+  const totalRecords = records.length;
+  const completedRecords = records.filter((r) => r.isCompleted).length;
+  const trainingProgress = totalRecords > 0
+    ? Math.round((completedRecords / totalRecords) * 100)
+    : 0;
+  const canBookExam = schedule?.status === 'completed'
+    && totalRecords >= 3
+    && trainingProgress >= 60;
+  const cannotBookReason = !schedule
+    ? ''
+    : schedule.status !== 'completed'
+      ? '课程尚未完成'
+      : totalRecords < 3
+        ? `训练记录不足（当前 ${totalRecords} 条，至少需要 3 条）`
+        : trainingProgress < 60
+          ? `训练完成度过低（当前 ${trainingProgress}%，至少需要 60%）`
+          : '';
 
   useEffect(() => {
     if (recordModalOpen && editingRecord) {
@@ -207,14 +227,23 @@ export const ScheduleDetailDrawer: React.FC<ScheduleDetailDrawerProps> = ({
               </Button>
             )}
             {schedule?.status === 'completed' && (
-              <Button
-                type="primary"
-                icon={<FileText size={14} />}
-                onClick={() => setExamFormOpen(true)}
-                style={{ background: '#7c3aed' }}
+              <Tooltip
+                title={
+                  canBookExam
+                    ? `训练完成度：${trainingProgress}%（${completedRecords}/${totalRecords} 项已完成）`
+                    : cannotBookReason || undefined
+                }
               >
-                预约考试
-              </Button>
+                <Button
+                  type="primary"
+                  icon={<FileText size={14} />}
+                  onClick={() => setExamFormOpen(true)}
+                  style={{ background: '#7c3aed' }}
+                  disabled={!canBookExam}
+                >
+                  预约考试
+                </Button>
+              </Tooltip>
             )}
             {schedule &&
               schedule.status !== 'completed' &&
@@ -326,6 +355,28 @@ export const ScheduleDetailDrawer: React.FC<ScheduleDetailDrawerProps> = ({
               >
                 {schedule.timeSlot}
               </Descriptions.Item>
+              {totalRecords > 0 && (
+                <Descriptions.Item
+                  label={
+                    <Space size={6}>
+                      <Target size={14} />
+                      训练进度
+                    </Space>
+                  }
+                >
+                  <Space size={8}>
+                    <Progress
+                      percent={trainingProgress}
+                      size="small"
+                      status={canBookExam ? 'success' : trainingProgress > 0 ? 'active' : 'normal'}
+                      style={{ width: 150 }}
+                    />
+                    <span style={{ color: trainingProgress >= 60 ? '#059669' : '#64748b', fontWeight: 500 }}>
+                      {completedRecords}/{totalRecords} 项完成
+                    </span>
+                  </Space>
+                </Descriptions.Item>
+              )}
               {schedule.isAbsent && schedule.absentNote && (
                 <Descriptions.Item label="缺勤备注">
                   <span style={{ color: '#dc2626' }}>{schedule.absentNote}</span>

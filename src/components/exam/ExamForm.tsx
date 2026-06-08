@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Form, Select, DatePicker, Input, Radio, App } from 'antd';
+import { Modal, Form, Select, DatePicker, Input, Radio, App, AutoComplete } from 'antd';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import dayjs from 'dayjs';
@@ -8,7 +8,7 @@ import { EXAM_SUBJECT_OPTIONS, EXAM_STATUS_OPTIONS, EXAM_SESSIONS } from '@/util
 import { useExamStore } from '@/store/examStore';
 import { useStudentStore } from '@/store/studentStore';
 import { ExamAppointment } from '@/types';
-import { cleanText } from '@/utils/helpers';
+import { cleanText, isDateNotBeforeToday } from '@/utils/helpers';
 
 interface ExamFormProps {
   open: boolean;
@@ -132,14 +132,14 @@ export const ExamForm: React.FC<ExamFormProps> = ({
               name="studentName"
               control={control}
               render={({ field }) => (
-                <Select
+                <AutoComplete
                   {...field}
                   allowClear
                   placeholder="请选择或输入学员姓名"
-                  mode={undefined}
                   options={studentNames.map((n) => ({ label: n, value: n }))}
-                  showSearch
-                  optionFilterProp="label"
+                  filterOption={(inputValue, option) =>
+                    (option?.label ?? '').toString().toLowerCase().includes(inputValue.toLowerCase())
+                  }
                 />
               )}
             />
@@ -179,6 +179,9 @@ export const ExamForm: React.FC<ExamFormProps> = ({
                 <DatePicker
                   style={{ width: '100%' }}
                   placeholder="请选择预约日期"
+                  disabledDate={(current) =>
+                    current && current.isBefore(dayjs().startOf('day'))
+                  }
                   value={field.value ? dayjs(field.value) : null}
                   onChange={(date) =>
                     setValue(
@@ -246,10 +249,9 @@ export const ExamForm: React.FC<ExamFormProps> = ({
                 control={control}
                 render={({ field }) => (
                   <Radio.Group
-                    {...field}
                     value={field.value}
                     onChange={(e) => {
-                      field.onChange(e.target.checked ? true : e.target.value === true);
+                      field.onChange(e.target.value);
                       setValue('isPassed', e.target.value, { shouldValidate: true });
                     }}
                   >

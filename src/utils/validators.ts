@@ -70,7 +70,8 @@ export const examFormSchema = z
     appointmentDate: z
       .string()
       .min(1, '请选择预约日期')
-      .refine((v) => dayjs(v).isValid(), '日期格式无效'),
+      .refine((v) => dayjs(v).isValid(), '日期格式无效')
+      .refine(isDateNotBeforeToday, '预约日期不能早于今天'),
     session: z.string().min(1, '请选择考试场次'),
     status: z.enum(['booked', 'confirmed', 'completed', 'cancelled', 'absent'], {
       required_error: '请选择考试状态',
