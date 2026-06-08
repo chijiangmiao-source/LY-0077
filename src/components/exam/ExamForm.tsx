@@ -8,7 +8,7 @@ import { EXAM_SUBJECT_OPTIONS, EXAM_STATUS_OPTIONS, EXAM_SESSIONS } from '@/util
 import { useExamStore } from '@/store/examStore';
 import { useStudentStore } from '@/store/studentStore';
 import { ExamAppointment } from '@/types';
-import { cleanText, isDateNotBeforeToday } from '@/utils/helpers';
+import { cleanText } from '@/utils/helpers';
 
 interface ExamFormProps {
   open: boolean;

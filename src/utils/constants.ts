@@ -1,13 +1,5 @@
 import { StatusOption, ExamStatusOption, ExamSubjectOption } from '@/types';
 
-export const STORAGE_KEYS = {
-  SCHEDULES: 'driving_school_schedules',
-  STUDENTS: 'driving_school_students',
-  COACHES: 'driving_school_coaches',
-  COURSE_RECORDS: 'driving_school_course_records',
-  EXAM_APPOINTMENTS: 'driving_school_exam_appointments',
-};
-
 export const STATUS_OPTIONS: StatusOption[] = [
   { value: 'pending', label: '待开始', color: 'default' },
   { value: 'training', label: '训练中', color: 'processing' },
@@ -65,3 +57,24 @@ export const EXAM_SESSIONS = [
   '下午场 15:30-17:30',
   '夜场 18:00-20:00',
 ];
+
+export const PROGRESS_STAGES = [
+  { value: 'registered', label: '已报名', color: 'default' as const, description: '学员已完成报名注册' },
+  { value: 'scheduled', label: '已排班', color: 'processing' as const, description: '已安排练车计划' },
+  { value: 'training', label: '训练中', color: 'processing' as const, description: '正在进行练车训练' },
+  { value: 'course_completed', label: '课程完成', color: 'success' as const, description: '全部练车课程已完成' },
+  { value: 'exam_booked', label: '已约考', color: 'warning' as const, description: '已预约考试' },
+  { value: 'exam_completed', label: '考试完成', color: 'success' as const, description: '全部科目考试已完成' },
+  { value: 'certified', label: '已拿证', color: 'success' as const, description: '已领取驾驶证' },
+  { value: 'archived', label: '已归档', color: 'default' as const, description: '学员档案已归档' },
+];
+
+export const STORAGE_KEYS = {
+  SCHEDULES: 'driving_school_schedules',
+  STUDENTS: 'driving_school_students',
+  COACHES: 'driving_school_coaches',
+  COURSE_RECORDS: 'driving_school_course_records',
+  EXAM_APPOINTMENTS: 'driving_school_exam_appointments',
+  STUDENT_PROGRESSES: 'driving_school_student_progresses',
+  STAGE_TRANSITIONS: 'driving_school_stage_transitions',
+};

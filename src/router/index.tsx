@@ -8,6 +8,7 @@ import { StudentsPage } from '@/pages/StudentsPage';
 import { CoachesPage } from '@/pages/CoachesPage';
 import { StatisticsPage } from '@/pages/StatisticsPage';
 import { ExamsPage } from '@/pages/ExamsPage';
+import { ProgressPage } from '@/pages/ProgressPage';
 import { useInitData } from '@/hooks/useInitData';
 
 const AppContent: React.FC = () => {
@@ -20,6 +21,7 @@ const AppContent: React.FC = () => {
         <Route path="/students" element={<StudentsPage />} />
         <Route path="/coaches" element={<CoachesPage />} />
         <Route path="/exams" element={<ExamsPage />} />
+        <Route path="/progress" element={<ProgressPage />} />
         <Route path="/statistics" element={<StatisticsPage />} />
       </Routes>
     </AppLayout>

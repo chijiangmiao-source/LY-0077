@@ -5,6 +5,7 @@ import { STORAGE_KEYS } from '@/utils/constants';
 import { storage } from '@/utils/storage';
 import { generateId, cleanText } from '@/utils/helpers';
 import { useScheduleStore } from './scheduleStore';
+import { useProgressStore } from './progressStore';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyData = any;
@@ -61,15 +62,19 @@ export const useStudentStore = create<StudentState>((set, get) => ({
     if (students.some((s) => s.name === cleanedName)) {
       return { success: false, message: '该学员已存在' };
     }
+    const newId = generateId();
     const newStudent: Student = {
       ...data,
       name: cleanedName,
-      id: generateId(),
+      id: newId,
       createdAt: dayjs().toISOString(),
     };
     const updated = [...students, newStudent];
     set({ students: updated });
     storage.set(STORAGE_KEYS.STUDENTS, updated);
+
+    useProgressStore.getState().initProgressForStudent(newId, cleanedName, data.licenseType);
+
     return { success: true };
   },
 

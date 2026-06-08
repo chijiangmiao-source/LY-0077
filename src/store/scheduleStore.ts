@@ -7,6 +7,7 @@ import {
   generateScheduleId,
   canTransitionStatus,
 } from '@/utils/helpers';
+import { useProgressStore } from './progressStore';
 
 interface BatchResult {
   success: boolean;
@@ -136,6 +137,10 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
     const updated = [...schedules, newSchedule];
     set({ schedules: updated });
     storage.set(STORAGE_KEYS.SCHEDULES, updated);
+
+    const progressStore = useProgressStore.getState();
+    progressStore.recalculateAllProgresses();
+
     return { success: true };
   },
 
@@ -175,6 +180,11 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
     );
     set({ schedules: updated });
     storage.set(STORAGE_KEYS.SCHEDULES, updated);
+
+    const progressStore = useProgressStore.getState();
+    progressStore.updateTrainingStats(schedule.studentName);
+    progressStore.recalculateAllProgresses();
+
     return { success: true };
   },
 

@@ -9,6 +9,7 @@ import {
   Car,
   AlertTriangle,
   FileText,
+  TrendingUp,
 } from 'lucide-react';
 import { useScheduleStore } from '@/store/scheduleStore';
 
@@ -28,6 +29,11 @@ const menuItems = [
     key: '/students',
     icon: <Users size={18} />,
     label: '学员管理',
+  },
+  {
+    key: '/progress',
+    icon: <TrendingUp size={18} />,
+    label: '拿证进度',
   },
   {
     key: '/coaches',

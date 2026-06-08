@@ -1,5 +1,56 @@
 export type CourseStatus = 'pending' | 'training' | 'completed' | 'cancelled';
 
+export type ProgressStage =
+  | 'registered'
+  | 'scheduled'
+  | 'training'
+  | 'course_completed'
+  | 'exam_booked'
+  | 'exam_completed'
+  | 'certified'
+  | 'archived';
+
+export interface StageTransition {
+  id: string;
+  studentName: string;
+  fromStage: ProgressStage | null;
+  toStage: ProgressStage;
+  triggerType: 'schedule' | 'course' | 'exam' | 'manual' | 'certify';
+  triggerId?: string;
+  remark?: string;
+  operator: string;
+  createdAt: string;
+}
+
+export interface StudentProgress {
+  id: string;
+  studentId: string;
+  studentName: string;
+  licenseType: string;
+  currentStage: ProgressStage;
+  stageTimeline: {
+    stage: ProgressStage;
+    enteredAt: string;
+    note?: string;
+  }[];
+  passedSubjects: ExamSubject[];
+  totalTrainingHours: number;
+  completedSchedules: number;
+  remark?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProgressFilter {
+  keyword?: string;
+  studentName?: string;
+  currentStage?: ProgressStage | '';
+  licenseType?: string;
+  examSubject?: ExamSubject | '';
+  dateRange?: [string, string] | null;
+  dateField?: 'createdAt' | 'updatedAt' | 'stageEntered';
+}
+
 export interface Schedule {
   id: string;
   studentName: string;

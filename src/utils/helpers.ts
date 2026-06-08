@@ -88,3 +88,54 @@ export const canTransitionStatus = (
   };
   return transitions[current]?.includes(next) ?? false;
 };
+
+export const getProgressStageLabel = (stage: string): string => {
+  const map: Record<string, string> = {
+    registered: '已报名',
+    scheduled: '已排班',
+    training: '训练中',
+    course_completed: '课程完成',
+    exam_booked: '已约考',
+    exam_completed: '考试完成',
+    certified: '已拿证',
+    archived: '已归档',
+  };
+  return map[stage] || stage;
+};
+
+export const getProgressStageColor = (stage: string): string => {
+  const map: Record<string, string> = {
+    registered: '#64748b',
+    scheduled: '#0891b2',
+    training: '#d97706',
+    course_completed: '#059669',
+    exam_booked: '#d97706',
+    exam_completed: '#059669',
+    certified: '#7c3aed',
+    archived: '#64748b',
+  };
+  return map[stage] || '#64748b';
+};
+
+export const getProgressStageOrder = (stage: string): number => {
+  const order: Record<string, number> = {
+    registered: 0,
+    scheduled: 1,
+    training: 2,
+    course_completed: 3,
+    exam_booked: 4,
+    exam_completed: 5,
+    certified: 6,
+    archived: 7,
+  };
+  return order[stage] ?? 0;
+};
+
+export const canTransitionProgressStage = (
+  current: string,
+  next: string
+): boolean => {
+  const currentOrder = getProgressStageOrder(current);
+  const nextOrder = getProgressStageOrder(next);
+  return nextOrder >= currentOrder;
+};

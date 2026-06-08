@@ -5,6 +5,7 @@ import { STORAGE_KEYS } from '@/utils/constants';
 import { storage } from '@/utils/storage';
 import { generateExamId, cleanText } from '@/utils/helpers';
 import { useStudentStore } from './studentStore';
+import { useProgressStore } from './progressStore';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyData = any;
@@ -100,6 +101,10 @@ export const useExamStore = create<ExamState>((set, get) => ({
     const updated = [...appointments, newAppointment];
     set({ appointments: updated });
     storage.set(STORAGE_KEYS.EXAM_APPOINTMENTS, updated);
+
+    const progressStore = useProgressStore.getState();
+    progressStore.recalculateAllProgresses();
+
     return { success: true };
   },
 
@@ -158,6 +163,13 @@ export const useExamStore = create<ExamState>((set, get) => ({
     );
     set({ appointments: updated });
     storage.set(STORAGE_KEYS.EXAM_APPOINTMENTS, updated);
+
+    const progressStore = useProgressStore.getState();
+    if (status === 'completed' && isPassed) {
+      progressStore.addPassedSubject(appointment.studentName, appointment.subject);
+    }
+    progressStore.recalculateAllProgresses();
+
     return { success: true };
   },
 
